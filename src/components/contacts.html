@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management | ChatApp</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js"></script>
+  </head>
+
+  <body>
+    <nav class="navbar text-bg-primary p-3 fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="./dashboard.html">ChatApp</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#offcanvasNavbar"
+          aria-controls="offcanvasNavbar"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div
+          class="offcanvas offcanvas-end"
+          tabindex="-1"
+          id="offcanvasNavbar"
+          aria-labelledby="offcanvasNavbarLabel"
+        >
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasNavbarLabel">ChatApp</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="offcanvas"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="offcanvas-body">
+            <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+              <li class="nav-item">
+                <a
+                  class="nav-link active"
+                  aria-current="page"
+                  href="./dashboard.html"
+                  >Home</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/index.html">Logout</a>
+              </li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  Dropdown
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#">Manage</a></li>
+                  <li><a class="dropdown-item" href="#">Friends</a></li>
+                  <li>
+                    <hr class="dropdown-divider" />
+                  </li>
+                  <li><a class="dropdown-item" href="#">More</a></li>
+                </ul>
+              </li>
+            </ul>
+            <form class="d-flex mt-3" role="search">
+              <input
+                class="form-control me-2"
+                type="search"
+                placeholder="Search"
+                aria-label="Search"
+              />
+              <button class="btn btn-outline-success" type="submit">
+                Search
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+
+    <div class="container mt-5" style="padding-top: 70px">
+      <h1 class="mb-4">User Management</h1>
+      <input
+        id="searchInput"
+        type="text"
+        class="form-control mb-4"
+        placeholder="Search users by username or email"
+      />
+
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <!-- Users will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        getDocs,
+        query,
+        where,
+        orderBy,
+      } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+
+      // Firebase configuration
+      const firebaseConfig = {
+        apiKey: "",
+        authDomain: "chatapp-40ccc.firebaseapp.com",
+        projectId: "chatapp-40ccc",
+        storageBucket: "chatapp-40ccc.appspot.com",
+        messagingSenderId: "552383314593",
+        appId: "1:552383314593:web:3f49252a6da294c17f4ee0",
+        measurementId: "G-HE210EM1K6",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // Fetch and display users
+      async function fetchUsers() {
+        try {
+          console.log("Attempting to fetch users from Firestore...");
+          const userCollection = collection(db, "users");
+          const userQuery = query(userCollection, orderBy("username"));
+          const querySnapshot = await getDocs(userQuery);
+
+          const userTableBody = document.getElementById("userTableBody");
+          userTableBody.innerHTML = ""; // Clear table before adding rows
+
+          if (querySnapshot.empty) {
+            console.log("No users found in Firestore.");
+            userTableBody.innerHTML =
+              "<tr><td colspan='3'>No users found.</td></tr>";
+            return;
+          }
+
+          querySnapshot.forEach((doc) => {
+            const user = doc.data();
+            console.log("User document:", doc.id, user);
+
+            // Add row to table
+            const row = document.createElement("tr");
+            row.innerHTML = `
+        <td>${user.username || "N/A"}</td>
+        <td>${user.email || "N/A"}</td>
+        <td>
+          <button class="btn btn-primary sendRequestBtn" data-uid="${
+            doc.id
+          }">Send Request</button>
+          <button class="btn btn-danger deleteFriendBtn" data-uid="${
+            doc.id
+          }">Delete</button>
+        </td>
+      `;
+            userTableBody.appendChild(row);
+          });
+
+          addEventListeners();
+        } catch (error) {
+          console.error("Error fetching users from Firestore:", error);
+          const userTableBody = document.getElementById("userTableBody");
+          userTableBody.innerHTML = `<tr><td colspan='3'>Error fetching users: ${error.message}</td></tr>`;
+        }
+      }
+    </script>
+  </body>
+</html>
