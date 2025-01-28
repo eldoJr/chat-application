@@ -55,7 +55,7 @@
                 >
                 <h1 class="ls-tight font-bolder h2">Sign up to ChatApp!</h1>
               </div>
-              <form>
+              <form id="signupForm">
                 <div class="mb-5">
                   <label class="form-label" for="email">Email"</label>
                   <input
@@ -277,63 +277,98 @@
     </div>
 
     <script type="module">
-      // Import the functions you need from the SDKs you need
+      // Import the functions you need from the SDKs
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
-      import { getAuth } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
-      import { getFirestore } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-      // TODO: Add SDKs for Firebase products that you want to use
-      // https://firebase.google.com/docs/web/setup#available-libraries
-
+      import {
+        getAuth,
+        createUserWithEmailAndPassword,
+        updateProfile,
+      } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+    
       // Your web app's Firebase configuration
-      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
       const firebaseConfig = {
         apiKey: "",
         authDomain: "chatapp-40ccc.firebaseapp.com",
         projectId: "chatapp-40ccc",
-        storageBucket: "chatapp-40ccc.firebasestorage.app",
+        storageBucket: "chatapp-40ccc.appspot.com",
         messagingSenderId: "552383314593",
         appId: "1:552383314593:web:3f49252a6da294c17f4ee0",
         measurementId: "G-HE210EM1K6",
       };
-
-      // Initialize Firebase
+    
+      // Initialize Firebase App and Auth
       const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
-      const auth = firebase.getAuth();
-
+      const auth = getAuth(app);
+    
       // Handle form submission
-      document
-        .getElementById("signupForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault(); // Prevent form from refreshing the page
-
-          const email = document.getElementById("email").value.trim();
-          const password = document.getElementById("password").value.trim();
-          const username = document.getElementById("username").value.trim();
-          const errorDiv = document.getElementById("error");
-
-          try {
-            // Create user with email and password
-            const userCredential =
-              await firebase.createUserWithEmailAndPassword(
-                auth,
-                email,
-                password
-              );
-
-            // Update the user's display name
-            await firebase.updateProfile(userCredential.user, {
-              displayName: username,
-            });
-
-            alert("Sign-up successful! Welcome, " + username);
-            // Redirect or perform additional actions
-          } catch (error) {
-            // Display error message
-            errorDiv.textContent = error.message;
-          }
-        });
+      document.getElementById("signupForm").addEventListener("submit", handleSignUp);
+    
+      async function handleSignUp(event) {
+        event.preventDefault(); // Prevent form submission
+    
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const username = document.getElementById("username").value.trim();
+        const errorDiv = document.getElementById("error");
+    
+        // Clear previous error messages
+        errorDiv.textContent = "";
+    
+        // Input Validation
+        if (!validateEmail(email)) {
+          errorDiv.textContent = "Invalid email format.";
+          return;
+        }
+    
+        if (!validatePassword(password)) {
+          errorDiv.textContent =
+            "Password must be at least 15 characters OR at least 8 characters including a number and a lowercase letter.";
+          return;
+        }
+    
+        if (!validateUsername(username)) {
+          errorDiv.textContent =
+            "Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.";
+          return;
+        }
+    
+        // Create Firebase User
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+    
+          // Update user profile with username
+          await updateProfile(user, { displayName: username });
+    
+          // Redirect or show success message
+          alert("Sign-up successful! Redirecting...");
+          window.location.href = "/index.html"; // Replace with your desired redirect URL
+        } catch (error) {
+          // Display Firebase error messages
+          errorDiv.textContent = error.message;
+        }
+      }
+    
+      // Helper Functions
+      function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      }
+    
+      function validatePassword(password) {
+        return (
+          password.length >= 15 ||
+          (password.length >= 8 &&
+            /[a-z]/.test(password) &&
+            /\d/.test(password))
+        );
+      }
+    
+      function validateUsername(username) {
+        const usernameRegex = /^(?!-)(?!.*--)[a-zA-Z0-9-]+(?<!-)$/;
+        return usernameRegex.test(username);
+      }
     </script>
+    
   </body>
 </html>
